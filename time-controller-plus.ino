@@ -9,8 +9,7 @@
 #define jdq 11
 int KEY_NUM = 0;			//按键键值存放变量，不等于1说明有按键按下
 
-void setup()
-{
+void setup() {
   Serial.begin(9600);
   pinMode(5, OUTPUT);
   digitalWrite(5, 0);
@@ -83,19 +82,18 @@ void loop()
     if (digitalRead(KEY3) == 0)
     {
       Serial.println("key3");
-      value << 1;
+      value = value ^ (1 << (7 - order));
+      Serial.print(value);
       digitalWrite(jdq, 0);
       digitalWrite(LEDB, 1);
     }
     else
     {
-      value << 1;
-      value += 1;
       digitalWrite(jdq, 1);
       digitalWrite(LEDB, 0);
     }
     order++;
-    if(order >= 8) {
+    if (order >= 8) {
       EEPROM.write(index, value);
       order = 0;
       value = 0;
@@ -120,24 +118,21 @@ void loop()
   }
   if (xiangmu == 2) //启动
   {
-    digitalWrite(LEDG,!digitalRead(LEDG));
-    if ((EEPROM.read(index) >> order) & 1)
-    {
-      digitalWrite(jdq, 1);
-      digitalWrite(LEDB, 0);
-    }
-    else
-    {
+    digitalWrite(LEDG, !digitalRead(LEDG));
+    if ((EEPROM.read(index) >> (7 - order)) & 1) {
       digitalWrite(jdq, 0);
       digitalWrite(LEDB, 1);
     }
+    else {
+      digitalWrite(jdq, 1);
+      digitalWrite(LEDB, 0);
+    }
     order++;
-    if(order >= 8) {
+    if (order >= 8) {
       order = 0;
       index++;
     }
-    if (index >= 1024)
-    {
+    if (index >= 1024) {
       xiangmu = 0;
       digitalWrite(LEDR, 0);
       digitalWrite(LEDG, 1);
@@ -147,9 +142,11 @@ void loop()
   if (digitalRead(KEY4) == 0)
   {
     delay(10);
-    if (digitalRead(KEY4) == 0)
-    {
+    if (digitalRead(KEY4) == 0) {
       Serial.println("key4");
+      for (int i = 0; i < 1024; i++) {
+        Serial.print(EEPROM.read(i));
+      }
     }
   }
   delay(100);
