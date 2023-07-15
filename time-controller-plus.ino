@@ -7,7 +7,6 @@
 #define KEY3 A4
 #define KEY4 A3
 #define jdq 11
-int KEY_NUM = 0;			//按键键值存放变量，不等于1说明有按键按下
 
 void setup() {
   Serial.begin(9600);
@@ -36,54 +35,73 @@ void setup() {
   digitalWrite(LEDR, 0);
   digitalWrite(LEDG, 1);
   digitalWrite(LEDB, 0);
-
 }
-long timer1 = 0;
-int xiangmu = 0;
+
+unsigned long times[2] = {0, 0}; // 記錄運行時間
+unsigned long timestart = 0;
+
+int state = 0;
 int index = 0;
 int order = 0;
 int value = 0;
 
 void loop()
 {
-  if (digitalRead(KEY1) == 0)
+  if (digitalRead(KEY1) == 0  || index >= 1024) // Clearning data
   {
     delay(10);
-    if (digitalRead(KEY1) == 0)
+    if (digitalRead(KEY1) == 0  || index >= 1024)
     {
       Serial.println("key1");
-      if (xiangmu == 0)
+      if (state == 0)
       {
         for (int i = 0; i < 1024; i++) {
           EEPROM.write(i, 0);
         }
-        xiangmu = 1;
+        state = 1;
         index = 0;
         order = 0;
+        value = 0;
         digitalWrite(LEDR, 0);
         digitalWrite(LEDG, 0);
         digitalWrite(LEDB, 0);
+        while (digitalRead(KEY1) == 0);
+        while (digitalRead(KEY2) == 1);
+        while (digitalRead(KEY2) == 0);
+        times[0] = millis();
+        times[1] = millis();
+        timestart = millis();
       }
       else
       {
-        xiangmu = 0;
+        state = 0;
+        // EEPROM.write(index, value);
+        order = 0;
+        value = 0;
+        index = 0;
         digitalWrite(LEDR, 1);
-        delay(3000);
+        digitalWrite(LEDG, 0);
+        digitalWrite(LEDB, 0);
+        while (digitalRead(KEY1) == 0);
         digitalWrite(LEDR, 0);
         digitalWrite(LEDG, 1);
         digitalWrite(LEDB, 0);
       }
     }
-    while (digitalRead(KEY1) == 0);
+    // while (digitalRead(KEY1) == 0);
   }
-  if (xiangmu == 1) //学习
+  if (state == 1 && (millis() - times[0]) >= 100) //Learning
   {
-    digitalWrite(LEDR, !digitalRead(LEDR));
+    times[0] = millis();
+    if ((millis() - times[1]) >= 1000) {
+      digitalWrite(LEDR, !digitalRead(LEDR));
+      times[1] = millis();
+    }
     if (digitalRead(KEY3) == 0)
     {
-      Serial.println("key3");
+      // Serial.println("key3");
       value = value ^ (1 << (7 - order));
-      Serial.print(value);
+      // Serial.print(value);
       digitalWrite(jdq, 0);
       digitalWrite(LEDB, 1);
     }
@@ -100,26 +118,35 @@ void loop()
       index++;
     }
   }
-  if (digitalRead(KEY2) == 0 || index >= 1024)
+  if (digitalRead(KEY2) == 0)
   {
     delay(10);
-    if (digitalRead(KEY2) == 0 || index >= 1024)
+    if (digitalRead(KEY2) == 0)
     {
-      Serial.println("key2");
-      if (xiangmu == 0)
+      // Serial.println("key2");
+      if (state == 0)
       {
-        xiangmu = 2;
-        EEPROM.write(index, value);
+        state = 2;
         order = 0;
-        value = 0;
         index = 0;
+        value = 0;
+        times[0] = millis();
+        times[1] = millis();
+        timestart = millis();
       }
     }
   }
-  if (xiangmu == 2) //启动
+  if (state == 2  && (millis() - times[0]) >= 100) // Trigger
   {
-    digitalWrite(LEDG, !digitalRead(LEDG));
-    if ((EEPROM.read(index) >> (7 - order)) & 1) {
+    times[0] = millis();
+    if ((millis() - times[1]) >= 1000) {
+      digitalWrite(LEDR, !digitalRead(LEDR));
+      times[1] = millis();
+    }
+    if (order == 0) {
+      value = EEPROM.read(index);
+    }
+    if ((value >> (7 - order)) & 1) {
       digitalWrite(jdq, 0);
       digitalWrite(LEDB, 1);
     }
@@ -133,21 +160,25 @@ void loop()
       index++;
     }
     if (index >= 1024) {
-      xiangmu = 0;
+      state = 0;
+      order = 0;
+      index = 0;
+      value = 0;
       digitalWrite(LEDR, 0);
       digitalWrite(LEDG, 1);
       digitalWrite(LEDB, 0);
     }
   }
-  if (digitalRead(KEY4) == 0)
+  if (digitalRead(KEY4) == 0) // Dump data to serial
   {
     delay(10);
     if (digitalRead(KEY4) == 0) {
       Serial.println("key4");
       for (int i = 0; i < 1024; i++) {
         Serial.print(EEPROM.read(i));
+        Serial.print(" ,");
       }
     }
   }
-  delay(100);
+  // delay(100);
 }
