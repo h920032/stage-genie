@@ -67,7 +67,6 @@ void loop()
         digitalWrite(LEDB, 0);
         while (digitalRead(KEY1) == 0);
         while (digitalRead(KEY2) == 1);
-        while (digitalRead(KEY2) == 0);
         times[0] = millis();
         times[1] = millis();
         timestart = millis();
@@ -90,12 +89,19 @@ void loop()
     }
     // while (digitalRead(KEY1) == 0);
   }
-  if (state == 1 && (millis() - times[0]) >= 100) //Learning
+  if (state == 1 && millis() >= times[0]) //Learning
   {
+    /*
     times[0] = millis();
     if ((millis() - times[1]) >= 1000) {
       digitalWrite(LEDR, !digitalRead(LEDR));
       times[1] = millis();
+    }
+    */
+    times[0] += 100;
+    if (millis() >= times[1]) {
+      digitalWrite(LEDR, !digitalRead(LEDR));
+      times[1] += 500;
     }
     if (digitalRead(KEY3) == 0)
     {
@@ -136,12 +142,19 @@ void loop()
       }
     }
   }
-  if (state == 2  && (millis() - times[0]) >= 100) // Trigger
+  if (state == 2  && millis() >= times[0]) // Trigger
   {
+    /*
     times[0] = millis();
     if ((millis() - times[1]) >= 1000) {
       digitalWrite(LEDR, !digitalRead(LEDR));
       times[1] = millis();
+    }
+    */
+    times[0] += 100;
+    if (millis() >= times[1]) {
+      digitalWrite(LEDR, !digitalRead(LEDR));
+      times[1] += 500;
     }
     if (order == 0) {
       value = EEPROM.read(index);
