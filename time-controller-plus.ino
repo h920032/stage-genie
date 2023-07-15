@@ -12,7 +12,7 @@
 #define EEPROM_SIZE 1024
 
 void writeIntIntoEEPROM(int address, int number)
-{ 
+{
   EEPROM.write(address, number >> 8);
   EEPROM.write(address + 1, number & 0xFF);
 }
@@ -78,7 +78,7 @@ void loop()
       while (digitalRead(KEY1) == 0 && (button_time_end - button_time_start) < 5000)
       {
         button_time_end = millis();
-      } 
+      }
       Serial.println("key1");
       if (state == 0 && ((button_time_end - button_time_start) >= 5000))
       {
@@ -101,12 +101,12 @@ void loop()
       }
       else
       {
-        if(state = 1) {
+        if (state = 1) {
           if (index < MAX_INDEX) {
             EEPROM.write(index, value);
             index++;
+            writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
           }
-          writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
         }
         state = 0;
         order = 0;
@@ -125,7 +125,7 @@ void loop()
       }
     }
   }
-  else if (digitalRead(KEY2) == 0)
+  else if (digitalRead(KEY2) == 0 && state == 0)
   {
     delay(10);
     if (digitalRead(KEY2) == 0)
@@ -143,8 +143,11 @@ void loop()
       }
     }
   }
-  else if (digitalRead(KEY4) == 0) // Dump data to serial
+  else if (digitalRead(KEY4) == 0 && state == 0) // Dump data to serial
   {
+    /*
+     * Enable communicate with serial
+     */
     delay(10);
     if (digitalRead(KEY4) == 0) {
       Serial.println("key4");
@@ -180,6 +183,7 @@ void loop()
       order = 0;
       value = 0;
       index++;
+      writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
     }
   }
   if (state == 2  && millis() >= times[0]) // Trigger
