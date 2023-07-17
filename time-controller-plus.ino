@@ -1,4 +1,6 @@
 #include <EEPROM.h>
+
+// Defining the pin numbers for various components
 #define RECODRD_LED 4
 #define TIMER_LED 8
 #define NORMAL_LED 6
@@ -7,21 +9,25 @@
 #define KEY2 A1
 #define KEY3 A4
 #define KEY4 A3
-#define jdq 11
+#define jdq 11 // Relay control pin
 #define MAX_INDEX 900
 #define EEPROM_SIZE 1024
 
+// Function to write an integer into EEPROM at a given address
 void writeIntIntoEEPROM(int address, int number)
 {
   EEPROM.write(address, number >> 8);
   EEPROM.write(address + 1, number & 0xFF);
 }
+
+// Function to read an integer from EEPROM at a given address
 int readIntFromEEPROM(int address)
 {
   return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
 }
 
 void setup() {
+  // Initializing serial communication, setting up the pins and initial state of LEDs
   Serial.begin(9600);
   pinMode(3, OUTPUT);
   digitalWrite(3, 0);
@@ -55,11 +61,12 @@ void setup() {
   digitalWrite(RELAY_LED, 0);
 }
 
-unsigned long times[2] = {0, 0}; // 記錄運行時間
+unsigned long times[2] = {0, 0}; // Array to record running times
 unsigned long timestart = 0;
 unsigned long button_time_start = 0;
 unsigned long button_time_end = 0;
 
+// Defining state variables
 int state = 0;
 int index = 0;
 int order = 0;
@@ -69,7 +76,15 @@ int key = 0;
 
 
 void loop() {
+  // In State 0
   if (state == 0) {
+    // Normal LED on, others off
+    // Relay off
+
+    // KEY1 pressed for 5 seconds: Clear EEPROM and go to state 1
+    // KEY2 pressed: Go to state 2
+    // KEY3 pressed: Manually control the relay
+    // KEY4 pressed: Dump EEPROM data to serial
     digitalWrite(jdq, 1);
     digitalWrite(RECODRD_LED, 0);
     digitalWrite(TIMER_LED, 0);
@@ -159,7 +174,10 @@ void loop() {
       key = 0;
     }
   }
+  // In State 1: "Learning" state
   else if (state == 1) {
+    // Recording relay states every 100ms
+    // Exit to state 0 if KEY1 is pressed or if we've recorded MAX_INDEX states
     if (millis() >= times[0]) //Learning
     {
       times[0] += 100;
@@ -218,7 +236,10 @@ void loop() {
       key = 0;
     }
   }
+  // In State 2: "Trigger" state
   else if (state == 2) {
+    // Replay recorded relay states every 100ms
+    // Exit to state 0 if KEY1 is pressed or if we've reached the end of the recorded list
     if (millis() >= times[0]) // Trigger
     {
       times[0] += 100;
