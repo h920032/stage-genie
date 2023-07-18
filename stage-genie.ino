@@ -61,12 +61,12 @@ void setup() {
   pinMode(KEY3, INPUT_PULLUP);
   pinMode(KEY4, INPUT_PULLUP);
 
-  Serial.println("start create task");
+  // Serial.println("start create task");
   mutex = xSemaphoreCreateMutex();
   xTaskCreate(TaskState0, "State 0", STACK_SIZE, NULL, 1, NULL);
   xTaskCreate(TaskState1, "State 1", STACK_SIZE, NULL, 1, NULL);
   xTaskCreate(TaskState2, "State 2", STACK_SIZE, NULL, 1, NULL);
-  Serial.println("end create task");
+  // Serial.println("end create task");
 
   vTaskStartScheduler();
 
@@ -75,7 +75,7 @@ void setup() {
   digitalWrite(NORMAL_LED, HIGH);
   digitalWrite(RELAY_LED, HIGH);
   // delay(1000);
-  vTaskDelay( 1000 / portTICK_PERIOD_MS ); // wait for one second
+  vTaskDelay(1000 / portTICK_PERIOD_MS ); // wait for one second
   digitalWrite(RECODRD_LED, 0);
   digitalWrite(TIMER_LED, 0);
   digitalWrite(NORMAL_LED, 1);
@@ -196,16 +196,13 @@ void TaskState1(void *pvParameters) {
   int end_index = 0;
   int key = 0;
   while (true) {
-    //Serial.println(state);
     if (xSemaphoreTake(mutex, 10) == pdTRUE) {
-      // Serial.println("task1");
       if (state == 1) {
         times[0] = millis();
         times[1] = millis();
         while (state == 1) {
           // Recording relay states every 100ms
           // Exit to state 0 if KEY1 is pressed or if we've recorded MAX_INDEX states
-          Serial.println("enter state 1");
           if (millis() >= times[0])  // Learning
           {
             times[0] += 100;
@@ -278,9 +275,7 @@ void TaskState2(void *pvParameters) {
   int key = 0;
 
   while (true) {
-    //Serial.println(state);
     if (xSemaphoreTake(mutex, 10) == pdTRUE) {
-      // Serial.println("task2");
       if (state == 2) {
         times[0] = millis();
         times[1] = millis();
@@ -289,10 +284,8 @@ void TaskState2(void *pvParameters) {
           // Replay recorded relay states every 100ms
           // Exit to state 0 if KEY1 is pressed or if we've reached the end of the
           // recorded list
-          Serial.println("enter state 2");
           if (millis() >= times[0])  // Trigger
           {
-            Serial.println(index);
             times[0] += 100;
             if (millis() >= times[1]) {
               digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
@@ -314,7 +307,6 @@ void TaskState2(void *pvParameters) {
               index++;
             }
           }
-          Serial.println(state);
           if (digitalRead(KEY1) == 0 || index >= end_index) {
             if (key != 1) {
               button_time_start = millis();
@@ -337,7 +329,6 @@ void TaskState2(void *pvParameters) {
           } else {
             key = 0;
           }
-          Serial.println(state);
         }
       }
     }
