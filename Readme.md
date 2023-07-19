@@ -1,4 +1,4 @@
-# Stage Genie Project
+# Stage Genie - Arduino (Atmega328p) based timer with gesture recording
 This Arduino project provides a way to control a relay with the added ability to record and replay its states. The states are stored in the Arduino's EEPROM.
 
 ## Components
