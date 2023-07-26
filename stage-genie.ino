@@ -41,7 +41,7 @@ void setup() {
   digitalWrite(A0, 0);
 
   pinMode(jdq, OUTPUT);
-  digitalWrite(jdq, 1);
+  digitalWrite(jdq, 0);
   pinMode(RECODRD_LED, OUTPUT);
   pinMode(TIMER_LED, OUTPUT);
   pinMode(NORMAL_LED, OUTPUT);
@@ -85,7 +85,7 @@ void loop() {
     // KEY2 pressed: Go to state 2
     // KEY3 pressed: Manually control the relay
     // KEY4 pressed: Dump EEPROM data to serial
-    digitalWrite(jdq, 1);
+    digitalWrite(jdq, 0);
     digitalWrite(RECODRD_LED, 0);
     digitalWrite(TIMER_LED, 0);
     digitalWrite(NORMAL_LED, 1);
@@ -104,6 +104,10 @@ void loop() {
       // Serial.println("key1");
       if ((button_time_end - button_time_start) >= 5000)
       {
+        digitalWrite(RECODRD_LED, 1);
+        digitalWrite(TIMER_LED, 0);
+        digitalWrite(NORMAL_LED, 1);
+        digitalWrite(RELAY_LED, 0);
         key = 0;
         for (int i = 0; i < EEPROM_SIZE; i++) {
           EEPROM.write(i, 0);
@@ -144,7 +148,7 @@ void loop() {
     }
     else if (digitalRead(KEY3) == 0) {
       while (digitalRead(KEY3) == 0) {
-        digitalWrite(jdq, 0);
+        digitalWrite(jdq, 1);
         digitalWrite(RELAY_LED, 1);
       }
     }
@@ -190,12 +194,12 @@ void loop() {
         // Serial.println("key3");
         value = value ^ (1 << (7 - order));
         // Serial.print(value);
-        digitalWrite(jdq, 0);
+        digitalWrite(jdq, 1);
         digitalWrite(RELAY_LED, 1);
       }
       else
       {
-        digitalWrite(jdq, 1);
+        digitalWrite(jdq, 0);
         digitalWrite(RELAY_LED, 0);
       }
       order++;
@@ -228,7 +232,7 @@ void loop() {
         end_index = 0;
         digitalWrite(TIMER_LED, 1);
         digitalWrite(RELAY_LED, 0);
-        digitalWrite(jdq, 1);
+        digitalWrite(jdq, 0);
         while (digitalRead(KEY1) == 0);
       }
     }
@@ -251,11 +255,11 @@ void loop() {
         value = EEPROM.read(index);
       }
       if ((value >> (7 - order)) & 1) {
-        digitalWrite(jdq, 0);
+        digitalWrite(jdq, 1);
         digitalWrite(RELAY_LED, 1);
       }
       else {
-        digitalWrite(jdq, 1);
+        digitalWrite(jdq, 0);
         digitalWrite(RELAY_LED, 0);
       }
       order++;
@@ -280,7 +284,7 @@ void loop() {
         end_index = 0;
         digitalWrite(TIMER_LED, 1);
         digitalWrite(RELAY_LED, 0);
-        digitalWrite(jdq, 1);
+        digitalWrite(jdq, 0);
         while (digitalRead(KEY1) == 0);
       }
     }
