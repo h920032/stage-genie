@@ -70,10 +70,11 @@ unsigned long button_time_end = 0;
 int state = 0;
 int index = 0;
 int order = 0;
-int value = 0;
+uint8_t value = 0;
 int end_index = 0;
 int key = 0;
 
+uint8_t timeArray[MAX_INDEX] = {0};
 
 void loop() {
   // In State 0
@@ -105,8 +106,8 @@ void loop() {
       if ((button_time_end - button_time_start) >= 5000)
       {
         digitalWrite(RECODRD_LED, 1);
-        digitalWrite(TIMER_LED, 0);
-        digitalWrite(NORMAL_LED, 1);
+        digitalWrite(TIMER_LED, 1);
+        digitalWrite(NORMAL_LED, 0);
         digitalWrite(RELAY_LED, 0);
         key = 0;
         for (int i = 0; i < EEPROM_SIZE; i++) {
@@ -114,6 +115,9 @@ void loop() {
         }
         writeIntIntoEEPROM(EEPROM_SIZE - 3, 0);
         state = 1, index = 0, order = 0, value = 0;
+        for (int i = 0; i < MAX_INDEX; i++) {
+          timeArray[i] = 0;
+        }
         digitalWrite(RECODRD_LED, 1);
         digitalWrite(TIMER_LED, 0);
         digitalWrite(NORMAL_LED, 0);
@@ -204,11 +208,13 @@ void loop() {
       }
       order++;
       if (order >= 8) {
-        EEPROM.write(index, value);
+        // EEPROM.write(index, value);
+        timeArray[index] = value;
+        Serial.print(timeArray[index]);
         order = 0;
         value = 0;
         index++;
-        writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
+        // writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
       }
     }
     if (digitalRead(KEY1) == 0  || index >= MAX_INDEX)
@@ -223,16 +229,23 @@ void loop() {
       }
       if ((button_time_end - button_time_start) >= 10  || index >= MAX_INDEX) {
         key = 0;
-        if (index < MAX_INDEX) {
-          EEPROM.write(index, value);
-          index++;
-          writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
-        }
-        state = 0, order = 0, value = 0, index = 0;
-        end_index = 0;
         digitalWrite(TIMER_LED, 1);
         digitalWrite(RELAY_LED, 0);
-        digitalWrite(jdq, 0);
+        if (index < MAX_INDEX) {
+          // EEPROM.write(index, value);
+          timeArray[index] = value;
+          index++;
+          // writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
+        }
+        for(int i = 0; i < index; i++) {
+          Serial.print(timeArray[i]);
+          EEPROM.write(i, timeArray[i]);
+        }
+        writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
+        state = 0, order = 0, value = 0, index = 0;
+        end_index = 0;
+        // delete timeArray;
+        // digitalWrite(jdq, 0);
         while (digitalRead(KEY1) == 0);
       }
     }
