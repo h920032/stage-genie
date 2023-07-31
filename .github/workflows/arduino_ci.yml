@@ -23,4 +23,11 @@ jobs:
           arduino-cli core install ${{matrix.arduino-platform}}
 
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino
+        run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino -o ./stage-genie_promini8mhz.bin
+        
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: stage-genie_promini8mhz
+          path: ./stage-genie_promini8mhz.bin
+          retention-days: 30
