@@ -23,7 +23,7 @@ jobs:
           arduino-cli core install ${{matrix.arduino-platform}}
 
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino -o ./stage-genie_promini8mhz.bin
+        run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino --output-dir ./stage-genie_promini8mhz.bin
         
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
