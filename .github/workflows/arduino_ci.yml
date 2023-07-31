@@ -1,0 +1,23 @@
+---
+name: Arduino_CI
+
+on: [push, pull_request]
+
+jobs:
+  arduino_ci:
+    runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    
+    - name: Install Arduino Cli
+      uses: arduino/setup-arduino-cli@v1
+
+    - name: Install Platform
+      run: |
+        arduino-cli core update-index
+        arduino-cli core install ${{matrix.arduino-platform}}
+
+    - name: Compile Sketch
+      run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino
