@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arduino-platform: ['arduino:avr']
-        fqbn: ['arduino:avr:pro:cpu=8MHzatmega328']
+        arduino-platform: ["arduino:avr"]
+        fqbn: ["arduino:avr:pro:cpu=8MHzatmega328"]
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -24,7 +24,7 @@ jobs:
 
       - name: Compile Sketch
         run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino --output-dir ./stage-genie_promini8mhz
-        
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
