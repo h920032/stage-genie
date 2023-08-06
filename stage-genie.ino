@@ -1,10 +1,14 @@
 #include <EEPROM.h>
 
 // Defining the pin numbers for various components
-#define RECODRD_LED 4
-#define TIMER_LED 8
-#define NORMAL_LED 6
-#define RELAY_LED 2
+#define RECODRD_LED 8
+#define TIMER_LED 6
+#define NORMAL_LED 7
+#define RELAY_LED 9
+#define RBG_RED 3
+#define RBG_GREEN 4
+#define RBG_BLUD 5
+#define RBG_RED
 #define KEY1 A2
 #define KEY2 A1
 #define KEY3 A4
