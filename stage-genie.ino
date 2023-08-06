@@ -8,7 +8,6 @@
 #define RBG_RED 3
 #define RBG_GREEN 4
 #define RBG_BLUD 5
-#define RBG_RED
 #define KEY1 A2
 #define KEY2 A1
 #define KEY3 A4
