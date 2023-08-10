@@ -180,26 +180,26 @@ void loop() {
       }
       break;
     }
-    
+
     // In State 1: "Learning" state
     case 1: {
       // Recording relay states every 100ms
       // Exit to state 0 if KEY1 is pressed or if we've recorded MAX_INDEX
       if (digitalRead(KEY3) == 0) {
-        digitalWrite(jdq, 1);
-        digitalWrite(RELAY_LED, 1);
         if (!button_state) {
           unsigned long time = millis();
+          digitalWrite(jdq, 1);
+          digitalWrite(RELAY_LED, 1);
           timeArray[index] = (time - times[0]) / 10;
           times[0] = time;
           index++;
           button_state = !button_state;
         }
       } else {
-        digitalWrite(jdq, 0);
-        digitalWrite(RELAY_LED, 0);
         if (button_state) {
           unsigned long time = millis();
+          digitalWrite(jdq, 0);
+          digitalWrite(RELAY_LED, 0);
           timeArray[index] = (time - times[0]) / 10;
           times[0] = time;
           index++;
@@ -210,7 +210,8 @@ void loop() {
         digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
         times[1] += 500;
       }
-      if (digitalRead(KEY1) == 0 || index >= MAX_INDEX || millis() >= MAX_TIME) {
+      if (digitalRead(KEY1) == 0 || index >= MAX_INDEX ||
+          millis() >= MAX_TIME) {
         if (key != 1) {
           button_time_start = millis();
           button_time_end = millis();
@@ -218,19 +219,18 @@ void loop() {
         } else {
           button_time_end = millis();
         }
-        if ((button_time_end - button_time_start) > 10 || index >= MAX_INDEX || millis() >= MAX_TIME) {
+        if ((button_time_end - button_time_start) > 10 || index >= MAX_INDEX ||
+            millis() >= MAX_TIME) {
           key = 0;
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
           timeArray[index] = (millis() - times[0]) / 10;
           index++;
           for (int i = 0; i < index; i++) {
-            // Serial.println(timeArray[i]);
             // EEPROM.write(i, timeArray[i]);
             writeIntIntoEEPROM(i * 2, timeArray[i]);
           }
           writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
-          // Serial.println(index);
           state = 0, index = 0;
           end_index = 0;
           button_state = false;
