@@ -61,7 +61,6 @@ void setup() {
 }
 
 unsigned long times[2] = {0, 0};  // Array to record running times
-unsigned long timestart = 0;
 unsigned long button_time_start = 0;
 unsigned long button_time_end = 0;
 
@@ -199,7 +198,7 @@ void loop() {
       if (order >= 8) {
         // EEPROM.write(index, value);
         timeArray[index] = value;
-        Serial.print(timeArray[index]);
+        // Serial.print(timeArray[index]);
         order = 0;
         value = 0;
         index++;
@@ -225,7 +224,7 @@ void loop() {
           // writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
         }
         for (int i = 0; i < index; i++) {
-          Serial.print(timeArray[i]);
+          // Serial.print(timeArray[i]);
           EEPROM.write(i, timeArray[i]);
         }
         writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
