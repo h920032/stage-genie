@@ -53,7 +53,7 @@ void setup() {
   digitalWrite(TIMER_LED, HIGH);
   digitalWrite(NORMAL_LED, HIGH);
   digitalWrite(RELAY_LED, HIGH);
-  delay(1000);
+  delay(500);
   digitalWrite(RECODRD_LED, 0);
   digitalWrite(TIMER_LED, 0);
   digitalWrite(NORMAL_LED, 1);
@@ -101,7 +101,7 @@ void loop() {
         button_time_end = millis();
       }
       // Serial.println("key1");
-      if ((button_time_end - button_time_start) >= 5000) {
+      if ((button_time_end - button_time_start) >= 4000) {
         digitalWrite(RECODRD_LED, 1);
         digitalWrite(TIMER_LED, 1);
         digitalWrite(NORMAL_LED, 0);
@@ -178,33 +178,33 @@ void loop() {
   else if (state == 1) {
     // Recording relay states every 100ms
     // Exit to state 0 if KEY1 is pressed or if we've recorded MAX_INDEX states
+    if (digitalRead(KEY3) == 0) {
+      digitalWrite(jdq, 1);
+      digitalWrite(RELAY_LED, 1);
+    } else {
+      digitalWrite(jdq, 0);
+      digitalWrite(RELAY_LED, 0);
+    }
     if (millis() >= times[0])  // Learning
     {
       times[0] += 100;
-      if (millis() >= times[1]) {
-        digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
-        times[1] += 500;
-      }
       if (digitalRead(KEY3) == 0) {
         // Serial.println("key3");
         value = value ^ (1 << (7 - order));
-        // Serial.print(value);
-        digitalWrite(jdq, 1);
-        digitalWrite(RELAY_LED, 1);
-      } else {
-        digitalWrite(jdq, 0);
-        digitalWrite(RELAY_LED, 0);
       }
       order++;
       if (order >= 8) {
         // EEPROM.write(index, value);
         timeArray[index] = value;
-        Serial.print(timeArray[index]);
         order = 0;
         value = 0;
         index++;
         // writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
       }
+    }
+    if (millis() >= times[1]) {
+      digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
+      times[1] += 500;
     }
     if (digitalRead(KEY1) == 0 || index >= MAX_INDEX) {
       if (key != 1) {
