@@ -25,6 +25,23 @@ unsigned int readIntFromEEPROM(int address) {
   return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
 }
 
+unsigned long times[2] = {0, 0};  // Array to record running times
+unsigned long timestart = 0;
+unsigned long button_time_start = 0;
+unsigned long button_time_end = 0;
+
+// Defining state variables
+int state = 0;
+int index = 0;
+int order = 0;
+uint8_t value = 0;
+int end_index = 0;
+int key = 0;
+bool button_state = false;
+
+// uint8_t timeArray[MAX_INDEX] = {0};
+unsigned int timeArray[MAX_INDEX] = {0};
+
 void setup() {
   // Initializing serial communication, setting up the pins and initial state of
   // LEDs
@@ -54,29 +71,18 @@ void setup() {
   digitalWrite(TIMER_LED, HIGH);
   digitalWrite(NORMAL_LED, HIGH);
   digitalWrite(RELAY_LED, HIGH);
+
+  int e_index = readIntFromEEPROM(EEPROM_SIZE - 3);
+  for (int i = 0; i < e_index; i++) {
+    timeArray[i] = readIntFromEEPROM(i * 2);
+  }
+
   delay(500);
   digitalWrite(RECODRD_LED, 0);
   digitalWrite(TIMER_LED, 0);
   digitalWrite(NORMAL_LED, 1);
   digitalWrite(RELAY_LED, 0);
 }
-
-unsigned long times[2] = {0, 0};  // Array to record running times
-unsigned long timestart = 0;
-unsigned long button_time_start = 0;
-unsigned long button_time_end = 0;
-
-// Defining state variables
-int state = 0;
-int index = 0;
-int order = 0;
-uint8_t value = 0;
-int end_index = 0;
-int key = 0;
-bool button_state = false;
-
-// uint8_t timeArray[MAX_INDEX] = {0};
-unsigned int timeArray[MAX_INDEX] = {0};
 
 void loop() {
   // In State 0
@@ -188,22 +194,26 @@ void loop() {
       if (digitalRead(KEY3) == 0) {
         if (!button_state) {
           unsigned long time = millis();
-          digitalWrite(jdq, 1);
-          digitalWrite(RELAY_LED, 1);
-          timeArray[index] = (time - times[0]) / 10;
-          times[0] = time;
-          index++;
-          button_state = !button_state;
+          if (!(time % 10)) {
+            digitalWrite(jdq, 1);
+            digitalWrite(RELAY_LED, 1);
+            timeArray[index] = (time - times[0]) / 10;
+            times[0] = time;
+            index++;
+            button_state = !button_state;
+          }
         }
       } else {
         if (button_state) {
           unsigned long time = millis();
-          digitalWrite(jdq, 0);
-          digitalWrite(RELAY_LED, 0);
-          timeArray[index] = (time - times[0]) / 10;
-          times[0] = time;
-          index++;
-          button_state = !button_state;
+          if (!(time % 10)) {
+            digitalWrite(jdq, 0);
+            digitalWrite(RELAY_LED, 0);
+            timeArray[index] = (time - times[0]) / 10;
+            times[0] = time;
+            index++;
+            button_state = !button_state;
+          }
         }
       }
       if (millis() >= times[1]) {
@@ -224,8 +234,10 @@ void loop() {
           key = 0;
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
-          timeArray[index] = (millis() - times[0]) / 10;
-          index++;
+          if (index < MAX_INDEX) {
+            timeArray[index] = (millis() - times[0]) / 10;
+            index++;
+          }
           for (int i = 0; i < index; i++) {
             // EEPROM.write(i, timeArray[i]);
             writeIntIntoEEPROM(i * 2, timeArray[i]);
@@ -252,7 +264,7 @@ void loop() {
       // recorded list
       if (millis() >= times[0])  // Trigger
       {
-        times[0] += readIntFromEEPROM(index * 2) * 10;
+        times[0] += timeArray[index] * 10;
         button_state = !button_state;
         digitalWrite(jdq, button_state);
         digitalWrite(RELAY_LED, button_state);
