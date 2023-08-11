@@ -218,7 +218,7 @@ void loop() {
       }
       if (millis() >= times[1]) {
         digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
-        times[1] += 500;
+        times[1] += 100;
       }
       if (digitalRead(KEY1) == 0 || index >= MAX_INDEX ||
           millis() >= MAX_TIME) {
@@ -272,7 +272,7 @@ void loop() {
       }
       if (millis() >= times[1]) {
         digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
-        times[1] += 500;
+        times[1] += 100;
       }
       if (digitalRead(KEY1) == 0 || index > end_index) {
         if (key != 1) {
