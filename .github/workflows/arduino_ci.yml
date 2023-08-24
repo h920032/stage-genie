@@ -21,6 +21,8 @@ jobs:
         run: |
           arduino-cli core update-index
           arduino-cli core install ${{matrix.arduino-platform}}
+          arduino-cli lib install SPIMemory
+          arduino-cli lib install SoftPWM
 
       - name: Compile Sketch
         run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino --output-dir ./stage-genie_promini8mhz
