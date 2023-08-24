@@ -1,28 +1,48 @@
-#include <EEPROM.h>
+#include <SPIMemory.h>
+#include <SoftPWM.h>
 
 // Defining the pin numbers for various components
-#define RECODRD_LED 4
+#define RECODRD_LED 6
 #define TIMER_LED 8
-#define NORMAL_LED 6
-#define RELAY_LED 2
+#define NORMAL_LED 7
+#define RELAY_LED 5
 #define KEY1 A2
 #define KEY2 A1
 #define KEY3 A4
-#define KEY4 A3
-#define jdq 11  // Relay control pin
-#define MAX_INDEX 900
-#define EEPROM_SIZE 1024
+#define METER A6
+#define jdq 2  // Relay control pin
+#define INDEX_NUM_ADDR 65536
+#define MAX_INDEX 64000
+#define SPI_PAGESIZE 256
 
-// Function to write an integer into EEPROM at a given address
-void writeIntIntoEEPROM(int address, int number) {
-  EEPROM.write(address, number >> 8);
-  EEPROM.write(address + 1, number & 0xFF);
-}
+// // Function to write an integer into EEPROM at a given address
+// void writeIntIntoEEPROM(int address, int number) {
+//   EEPROM.write(address, number >> 8);
+//   EEPROM.write(address + 1, number & 0xFF);
+// }
 
-// Function to read an integer from EEPROM at a given address
-int readIntFromEEPROM(int address) {
-  return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
-}
+// // Function to read an integer from EEPROM at a given address
+// int readIntFromEEPROM(int address) {
+//   return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
+// }
+
+SPIFlash flash;
+uint8_t pageBuffer[SPI_PAGESIZE];
+uint8_t data_buffer[SPI_PAGESIZE];
+
+unsigned long times[2] = {0, 0};  // Array to record running times
+unsigned long button_time_start = 0;
+unsigned long button_time_end = 0;
+
+// Defining state variables
+
+uint8_t value = 0;
+uint16_t index = 0;
+int order = 0;
+
+int state = 0;
+uint16_t end_index = 0;
+int key = 0;
 
 void setup() {
   // Initializing serial communication, setting up the pins and initial state of
@@ -48,31 +68,49 @@ void setup() {
   pinMode(KEY1, INPUT_PULLUP);
   pinMode(KEY2, INPUT_PULLUP);
   pinMode(KEY3, INPUT_PULLUP);
-  pinMode(KEY4, INPUT_PULLUP);
-  digitalWrite(RECODRD_LED, HIGH);
-  digitalWrite(TIMER_LED, HIGH);
-  digitalWrite(NORMAL_LED, HIGH);
-  digitalWrite(RELAY_LED, HIGH);
-  delay(1000);
+
+  SoftPWMBegin();
+  SoftPWMSet(RECODRD_LED, 0);
+  SoftPWMSet(TIMER_LED, 0);
+  SoftPWMSet(NORMAL_LED, 0);
+  SoftPWMSet(RELAY_LED, 0);
+  SoftPWMSetFadeTime(RECODRD_LED, 500, 500);
+  SoftPWMSetFadeTime(TIMER_LED, 500, 500);
+  SoftPWMSetFadeTime(NORMAL_LED, 500, 500);
+  SoftPWMSetFadeTime(RELAY_LED, 500, 500);
+  SoftPWMSetPercent(RECODRD_LED, 50);
+  SoftPWMSetPercent(TIMER_LED, 50);
+  SoftPWMSetPercent(NORMAL_LED, 50);
+  SoftPWMSetPercent(RELAY_LED, 50);
+
+  flash.begin();
+  for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+    pageBuffer[i] = 0;
+  }
+  for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+    data_buffer[i] = 0;
+  }
+  delay(500);
+
+  SoftPWMSetPercent(RECODRD_LED, 0);
+  SoftPWMSetPercent(TIMER_LED, 0);
+  SoftPWMSetPercent(NORMAL_LED, 0);
+  SoftPWMSetPercent(RELAY_LED, 0);
+  delay(500);
+  SoftPWMEnd(RECODRD_LED);
+  SoftPWMEnd(TIMER_LED);
+  SoftPWMEnd(NORMAL_LED);
+  SoftPWMEnd(RELAY_LED);
+
+  pinMode(RECODRD_LED, OUTPUT);
+  pinMode(TIMER_LED, OUTPUT);
+  pinMode(NORMAL_LED, OUTPUT);
+  pinMode(RELAY_LED, OUTPUT);
   digitalWrite(RECODRD_LED, 0);
   digitalWrite(TIMER_LED, 0);
   digitalWrite(NORMAL_LED, 1);
   digitalWrite(RELAY_LED, 0);
 }
-
-unsigned long times[2] = {0, 0};  // Array to record running times
-unsigned long button_time_start = 0;
-unsigned long button_time_end = 0;
-
-// Defining state variables
-int state = 0;
-int index = 0;
-int order = 0;
-uint8_t value = 0;
-int end_index = 0;
-int key = 0;
-
-uint8_t timeArray[MAX_INDEX] = {0};
 
 void loop() {
   switch (state) {
@@ -107,14 +145,14 @@ void loop() {
           digitalWrite(NORMAL_LED, 0);
           digitalWrite(RELAY_LED, 0);
           key = 0;
-          for (int i = 0; i < EEPROM_SIZE; i++) {
-            EEPROM.write(i, 0);
+
+          flash.eraseChip();
+          // flash.writeWord(INDEX_NUM_ADDR, 0);
+          state = 1, index = 0, order = 0, value = 0, end_index = 0;
+          for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+            pageBuffer[i] = 0;
           }
-          writeIntIntoEEPROM(EEPROM_SIZE - 3, 0);
-          state = 1, index = 0, order = 0, value = 0;
-          for (int i = 0; i < MAX_INDEX; i++) {
-            timeArray[i] = 0;
-          }
+
           digitalWrite(RECODRD_LED, 1);
           digitalWrite(TIMER_LED, 0);
           digitalWrite(NORMAL_LED, 0);
@@ -140,35 +178,16 @@ void loop() {
           // Serial.println("key2");
           if (state == 0) {
             state = 2, order = 0, index = 0, value = 0;
-            end_index = readIntFromEEPROM(EEPROM_SIZE - 3);
+            end_index = flash.readWord(INDEX_NUM_ADDR);
+            Serial.println(end_index);
             times[0] = millis();
             times[1] = millis();
           }
         }
       } else if (digitalRead(KEY3) == 0) {
         while (digitalRead(KEY3) == 0) {
-          digitalWrite(jdq, 1);
-          digitalWrite(RELAY_LED, 1);
-        }
-      } else if (digitalRead(KEY4) == 0)  // Dump data to serial
-      {
-        /*
-           Enable communicate with serial
-        */
-        if (key != 4) {
-          button_time_start = millis();
-          button_time_end = millis();
-          key = 4;
-        } else {
-          button_time_end = millis();
-        }
-        if ((button_time_end - button_time_start) >= 10) {
-          key = 0;
-          // Serial.println("key4");
-          for (int i = 0; i < MAX_INDEX; i++) {
-            Serial.print(EEPROM.read(i));
-            Serial.print(" ,");
-          }
+          analogWrite(jdq, map(analogRead(METER), 0, 1023, 0, 255));
+          analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
         }
       } else {
         key = 0;
@@ -183,26 +202,25 @@ void loop() {
       // states
       if (millis() >= times[0])  // Learning
       {
-        times[0] += 100;
+        times[0] += 10;
         if (digitalRead(KEY3) == 0) {
           // Serial.println("key3");
-          value = value ^ (1 << (7 - order));
-          // Serial.print(value);
-          digitalWrite(jdq, 1);
-          digitalWrite(RELAY_LED, 1);
+          pageBuffer[order] =
+              map(analogRead(METER), 0, 1023, 0, 255);  // analogRead(A1) >> 2;
+          // Serial.println(pageBuffer[order]);
+          analogWrite(jdq, (int)pageBuffer[order]);
+          analogWrite(RELAY_LED, (int)pageBuffer[order]);
         } else {
-          digitalWrite(jdq, 0);
-          digitalWrite(RELAY_LED, 0);
+          pageBuffer[order] = 0;
+          analogWrite(jdq, 0);
+          analogWrite(RELAY_LED, 0);
         }
         order++;
-        if (order >= 8) {
-          // EEPROM.write(index, value);
-          timeArray[index] = value;
+        if (order >= SPI_PAGESIZE) {
+          flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
           // Serial.print(timeArray[index]);
           order = 0;
-          value = 0;
-          index++;
-          // writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
+          index += SPI_PAGESIZE;
         }
       }
       if (millis() >= times[1]) {
@@ -222,16 +240,14 @@ void loop() {
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
           if (index < MAX_INDEX) {
-            // EEPROM.write(index, value);
-            timeArray[index] = value;
-            index++;
-            // writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
+            for (int i = order; i < SPI_PAGESIZE; i++) {
+              pageBuffer[i] = 0;
+            }
+            flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
+            index += SPI_PAGESIZE;
           }
-          for (int i = 0; i < index; i++) {
-            // Serial.print(timeArray[i]);
-            EEPROM.write(i, timeArray[i]);
-          }
-          writeIntIntoEEPROM(EEPROM_SIZE - 3, index);
+          Serial.println(index);
+          flash.writeWord(INDEX_NUM_ADDR, index);
           state = 0, order = 0, value = 0, index = 0;
           end_index = 0;
           // delete timeArray;
@@ -252,21 +268,17 @@ void loop() {
       // recorded list
       if (millis() >= times[0])  // Trigger
       {
-        times[0] += 100;
+        times[0] += 10;
         if (order == 0) {
-          value = EEPROM.read(index);
+          flash.readByteArray(index, &data_buffer[0], SPI_PAGESIZE);
         }
-        if ((value >> (7 - order)) & 1) {
-          digitalWrite(jdq, 1);
-          digitalWrite(RELAY_LED, 1);
-        } else {
-          digitalWrite(jdq, 0);
-          digitalWrite(RELAY_LED, 0);
-        }
+        analogWrite(RELAY_LED, (int)data_buffer[order]);
+        analogWrite(jdq, (int)data_buffer[order]);
+        // Serial.println(data_buffer[order]);
         order++;
-        if (order >= 8) {
+        if (order >= SPI_PAGESIZE) {
           order = 0;
-          index++;
+          index += SPI_PAGESIZE;
         }
       }
       if (millis() >= times[1]) {
