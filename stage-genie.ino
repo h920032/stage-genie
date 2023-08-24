@@ -15,17 +15,6 @@
 #define MAX_INDEX 64000
 #define SPI_PAGESIZE 256
 
-// // Function to write an integer into EEPROM at a given address
-// void writeIntIntoEEPROM(int address, int number) {
-//   EEPROM.write(address, number >> 8);
-//   EEPROM.write(address + 1, number & 0xFF);
-// }
-
-// // Function to read an integer from EEPROM at a given address
-// int readIntFromEEPROM(int address) {
-//   return (EEPROM.read(address) << 8) + EEPROM.read(address + 1);
-// }
-
 SPIFlash flash;
 uint8_t pageBuffer[SPI_PAGESIZE];
 uint8_t data_buffer[SPI_PAGESIZE];
@@ -48,14 +37,6 @@ void setup() {
   // Initializing serial communication, setting up the pins and initial state of
   // LEDs
   Serial.begin(9600);
-  pinMode(3, OUTPUT);
-  digitalWrite(3, 0);
-  pinMode(5, OUTPUT);
-  digitalWrite(5, 0);
-  pinMode(7, OUTPUT);
-  digitalWrite(7, 0);
-  pinMode(9, OUTPUT);
-  digitalWrite(9, 0);
   pinMode(A0, OUTPUT);
   digitalWrite(A0, 0);
 
@@ -179,7 +160,7 @@ void loop() {
           if (state == 0) {
             state = 2, order = 0, index = 0, value = 0;
             end_index = flash.readWord(INDEX_NUM_ADDR);
-            Serial.println(end_index);
+            // Serial.println(end_index);
             times[0] = millis();
             times[1] = millis();
           }
@@ -246,7 +227,7 @@ void loop() {
             flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
             index += SPI_PAGESIZE;
           }
-          Serial.println(index);
+          // Serial.println(index);
           flash.writeWord(INDEX_NUM_ADDR, index);
           state = 0, order = 0, value = 0, index = 0;
           end_index = 0;
