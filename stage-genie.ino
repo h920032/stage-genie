@@ -6,10 +6,12 @@
 #define TIMER_LED 8
 #define NORMAL_LED 7
 #define RELAY_LED 5
+#define POWER_LED 9
 #define KEY1 A2
 #define KEY2 A1
 #define KEY3 A4
 #define METER A6
+#define POWER A5
 #define jdq 2  // Relay control pin
 #define INDEX_NUM_ADDR 65536
 #define MAX_INDEX 64000
@@ -82,6 +84,24 @@ void setup() {
   SoftPWMEnd(TIMER_LED);
   SoftPWMEnd(NORMAL_LED);
   SoftPWMEnd(RELAY_LED);
+
+  Serial.println(analogRead(POWER));
+  if (analogRead(POWER) < 500) {
+    SoftPWMSet(POWER_LED, 0);
+    SoftPWMSetFadeTime(POWER_LED, 500, 500);
+    SoftPWMSetPercent(POWER_LED, 50);
+    delay(250);
+    SoftPWMSetPercent(POWER_LED, 0);
+    delay(250);
+    SoftPWMSetPercent(POWER_LED, 50);
+    delay(250);
+    SoftPWMSetPercent(POWER_LED, 0);
+    delay(250);
+    SoftPWMSetPercent(POWER_LED, 50);
+    delay(250);
+    SoftPWMSetPercent(POWER_LED, 0);
+    delay(250);
+  }
 
   pinMode(RECODRD_LED, OUTPUT);
   pinMode(TIMER_LED, OUTPUT);
