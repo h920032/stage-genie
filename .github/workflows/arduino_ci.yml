@@ -20,6 +20,7 @@ jobs:
       - name: Install Platform
         run: |
           arduino-cli core update-index
+          arduino-cli  core update-index --additional-urls https://dl.espressif.com/dl/package_esp32_index.json
           arduino-cli core install ${{matrix.arduino-platform}}
           arduino-cli lib install SPIMemory
 
