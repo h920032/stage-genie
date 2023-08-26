@@ -21,7 +21,7 @@ SPIFlash flash;
 uint8_t pageBuffer[SPI_PAGESIZE];
 uint8_t data_buffer[SPI_PAGESIZE];
 
-unsigned long times[2] = { 0, 0 };  // Store timing data for operations
+unsigned long times[2] = {0, 0};  // Store timing data for operations
 unsigned long button_time_start = 0;
 unsigned long button_time_end = 0;
 
@@ -115,199 +115,186 @@ void loop() {
   switch (state) {
     // Control logic based on current state
     // In State 0
-    case 0:
+    case 0: {
+      // Normal LED on, others off
+      // Relay off
+
+      // Default state: NORMAL LED on, others off, relay off
+      // KEY1 for 5 seconds: Clear flash memory and transition to state 1
+      // KEY2: Transition to state 2
+      // KEY3: Manual relay control
+      digitalWrite(MOS, 0);
+      digitalWrite(RECODRD_LED, 0);
+      digitalWrite(TIMER_LED, 0);
+      digitalWrite(NORMAL_LED, 1);
+      digitalWrite(RELAY_LED, 0);
+
+      if (digitalRead(KEY1) == 0)  // Clearning data
       {
-        // Normal LED on, others off
-        // Relay off
+        if (key != 1) {
+          button_time_start = millis();
+          button_time_end = millis();
+          key = 1;
+        } else {
+          button_time_end = millis();
+        }
+        // Serial.println("key1");
+        if ((button_time_end - button_time_start) >= 5000) {
+          digitalWrite(RECODRD_LED, 1);
+          digitalWrite(TIMER_LED, 1);
+          digitalWrite(NORMAL_LED, 0);
+          digitalWrite(RELAY_LED, 0);
+          key = 0;
 
-        // Default state: NORMAL LED on, others off, relay off
-        // KEY1 for 5 seconds: Clear flash memory and transition to state 1
-        // KEY2: Transition to state 2
-        // KEY3: Manual relay control
-        digitalWrite(MOS, 0);
-        digitalWrite(RECODRD_LED, 0);
-        digitalWrite(TIMER_LED, 0);
-        digitalWrite(NORMAL_LED, 1);
-        digitalWrite(RELAY_LED, 0);
-
-        if (digitalRead(KEY1) == 0)  // Clearning data
-        {
-          if (key != 1) {
-            button_time_start = millis();
-            button_time_end = millis();
-            key = 1;
-          } else {
-            button_time_end = millis();
+          flash.eraseChip();
+          // flash.writeWord(INDEX_NUM_ADDR, 0);
+          state = 1, index = 0, order = 0, value = 0, end_index = 0;
+          for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+            pageBuffer[i] = 0;
           }
-          // Serial.println("key1");
-          if ((button_time_end - button_time_start) >= 5000) {
-            digitalWrite(RECODRD_LED, 1);
-            digitalWrite(TIMER_LED, 1);
-            digitalWrite(NORMAL_LED, 0);
-            digitalWrite(RELAY_LED, 0);
-            key = 0;
 
-            flash.eraseChip();
-            // flash.writeWord(INDEX_NUM_ADDR, 0);
-            state = 1, index = 0, order = 0, value = 0, end_index = 0;
-            for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
-              pageBuffer[i] = 0;
-            }
-
-            digitalWrite(RECODRD_LED, 1);
-            digitalWrite(TIMER_LED, 0);
-            digitalWrite(NORMAL_LED, 0);
-            digitalWrite(RELAY_LED, 0);
-            while (digitalRead(KEY1) == 0)
-              ;
-            while (digitalRead(KEY2) == 1)
-              ;
+          digitalWrite(RECODRD_LED, 1);
+          digitalWrite(TIMER_LED, 0);
+          digitalWrite(NORMAL_LED, 0);
+          digitalWrite(RELAY_LED, 0);
+          while (digitalRead(KEY1) == 0)
+            ;
+          while (digitalRead(KEY2) == 1)
+            ;
+          times[0] = millis();
+          times[1] = millis();
+        }
+      } else if (digitalRead(KEY2) == 0)  // press trigger button
+      {
+        if (key != 2) {
+          button_time_start = millis();
+          button_time_end = millis();
+          key = 2;
+        } else {
+          button_time_end = millis();
+        }
+        if ((button_time_end - button_time_start) >= 10) {
+          key = 0;
+          if (state == 0) {
+            state = 2, order = 0, index = 0, value = 0;
+            end_index = flash.readWord(INDEX_NUM_ADDR);
             times[0] = millis();
             times[1] = millis();
           }
-        } else if (digitalRead(KEY2) == 0)  // press trigger button
-        {
-          if (key != 2) {
-            button_time_start = millis();
-            button_time_end = millis();
-            key = 2;
-          } else {
-            button_time_end = millis();
-          }
-          if ((button_time_end - button_time_start) >= 10) {
-            key = 0;
-            // Serial.println("key2");
-            if (state == 0) {
-              state = 2, order = 0, index = 0, value = 0;
-              end_index = flash.readWord(INDEX_NUM_ADDR);
-              // Serial.println(end_index);
-              times[0] = millis();
-              times[1] = millis();
-            }
-          }
-        } else if (digitalRead(KEY3) == 0) {
-          while (digitalRead(KEY3) == 0) {
-            analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
-            analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
-          }
-        } else {
-          key = 0;
         }
-        break;
-      }
-
-    // In State 1: "Learning" state
-    case 1:
-      {
-        // "Learning" state: Recording relay states at regular intervals
-        // Exit to state 0 when KEY1 pressed or upon reaching the MAX_INDEX
-        if (millis() >= times[0])  // Learning
-        {
-          times[0] += 10;
-          if (digitalRead(KEY3) == 0) {
-            // Serial.println("key3");
-            pageBuffer[order] =
-              map(analogRead(METER), 0, 1023, 0, 255);  // analogRead(A1) >> 2;
-            // Serial.println(pageBuffer[order]);
-            analogWrite(MOS, (int)pageBuffer[order]);
-            analogWrite(RELAY_LED, (int)pageBuffer[order]);
-          } else {
-            pageBuffer[order] = 0;
-            analogWrite(MOS, 0);
-            analogWrite(RELAY_LED, 0);
-          }
-          order++;
-          if (order >= SPI_PAGESIZE) {
-            flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
-            // Serial.print(timeArray[index]);
-            order = 0;
-            index += SPI_PAGESIZE;
-          }
+      } else if (digitalRead(KEY3) == 0) {
+        while (digitalRead(KEY3) == 0) {
+          analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
+          analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
         }
-        if (millis() >= times[1]) {
-          digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
-          times[1] += 100;
-        }
-        if (digitalRead(KEY1) == 0 || index >= MAX_INDEX) {
-          if (key != 1) {
-            button_time_start = millis();
-            button_time_end = millis();
-            key = 1;
-          } else {
-            button_time_end = millis();
-          }
-          if ((button_time_end - button_time_start) >= 10 || index >= MAX_INDEX) {
-            key = 0;
-            digitalWrite(TIMER_LED, 1);
-            digitalWrite(RELAY_LED, 0);
-            if (index < MAX_INDEX) {
-              for (int i = order; i < SPI_PAGESIZE; i++) {
-                pageBuffer[i] = 0;
-              }
-              flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
-              index += SPI_PAGESIZE;
-            }
-            // Serial.println(index);
-            flash.writeWord(INDEX_NUM_ADDR, index);
-            state = 0, order = 0, value = 0, index = 0;
-            end_index = 0;
-            // delete timeArray;
-            // digitalWrite(MOS, 0);
-            while (digitalRead(KEY1) == 0)
-              ;
-          }
-        } else {
-          key = 0;
-        }
-        break;
-      }
-
-    // In State 2: "Trigger" state
-    case 2:
-      {
-        // "Trigger" state: Replay recorded relay states at regular intervals
-        // Exit to state 0 when KEY1 pressed or upon reaching the end of the list
-        if (millis() >= times[0])  // Trigger
-        {
-          times[0] += 10;
-          if (order == 0) {
-            flash.readByteArray(index, &data_buffer[0], SPI_PAGESIZE);
-          }
-          analogWrite(RELAY_LED, (int)data_buffer[order]);
-          analogWrite(MOS, (int)data_buffer[order]);
-          // Serial.println(data_buffer[order]);
-          order++;
-          if (order >= SPI_PAGESIZE) {
-            order = 0;
-            index += SPI_PAGESIZE;
-          }
-        }
-        if (millis() >= times[1]) {
-          digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
-          times[1] += 100;
-        }
-        if (digitalRead(KEY1) == 0 || index >= end_index) {
-          if (key != 1) {
-            button_time_start = millis();
-            button_time_end = millis();
-            key = 1;
-          } else {
-            button_time_end = millis();
-          }
-          if ((button_time_end - button_time_start) >= 10 || index >= end_index) {
-            key = 0;
-            state = 0, order = 0, value = 0, index = 0;
-            end_index = 0;
-            digitalWrite(TIMER_LED, 1);
-            digitalWrite(RELAY_LED, 0);
-            digitalWrite(MOS, 0);
-            while (digitalRead(KEY1) == 0)
-              ;
-          }
-        } else {
-          key = 0;
-        }
+      } else {
+        key = 0;
       }
       break;
+    }
+
+    // In State 1: "Learning" state
+    case 1: {
+      // "Learning" state: Recording relay states at regular intervals
+      // Exit to state 0 when KEY1 pressed or upon reaching the MAX_INDEX
+      if (millis() >= times[0])  // Learning
+      {
+        times[0] += 10;
+        if (digitalRead(KEY3) == 0) {
+          pageBuffer[order] =
+              map(analogRead(METER), 0, 1023, 0, 255);  // analogRead(A1) >> 2;
+          analogWrite(MOS, (int)pageBuffer[order]);
+          analogWrite(RELAY_LED, (int)pageBuffer[order]);
+        } else {
+          pageBuffer[order] = 0;
+          analogWrite(MOS, 0);
+          analogWrite(RELAY_LED, 0);
+        }
+        order++;
+        if (order >= SPI_PAGESIZE) {
+          flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
+          order = 0;
+          index += SPI_PAGESIZE;
+        }
+      }
+      if (millis() >= times[1]) {
+        digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
+        times[1] += 100;
+      }
+      if (digitalRead(KEY1) == 0 || index >= MAX_INDEX) {
+        if (key != 1) {
+          button_time_start = millis();
+          button_time_end = millis();
+          key = 1;
+        } else {
+          button_time_end = millis();
+        }
+        if ((button_time_end - button_time_start) >= 10 || index >= MAX_INDEX) {
+          key = 0;
+          digitalWrite(TIMER_LED, 1);
+          digitalWrite(RELAY_LED, 0);
+          if (index < MAX_INDEX) {
+            for (int i = order; i < SPI_PAGESIZE; i++) {
+              pageBuffer[i] = 0;
+            }
+            flash.writeByteArray(index, &pageBuffer[0], SPI_PAGESIZE);
+            index += SPI_PAGESIZE;
+          }
+          flash.writeWord(INDEX_NUM_ADDR, index);
+          state = 0, order = 0, value = 0, index = 0;
+          end_index = 0;
+          while (digitalRead(KEY1) == 0)
+            ;
+        }
+      } else {
+        key = 0;
+      }
+      break;
+    }
+
+    // In State 2: "Trigger" state
+    case 2: {
+      // "Trigger" state: Replay recorded relay states at regular intervals
+      // Exit to state 0 when KEY1 pressed or upon reaching the end of the list
+      if (millis() >= times[0])  // Trigger
+      {
+        times[0] += 10;
+        if (order == 0) {
+          flash.readByteArray(index, &data_buffer[0], SPI_PAGESIZE);
+        }
+        analogWrite(RELAY_LED, (int)data_buffer[order]);
+        analogWrite(MOS, (int)data_buffer[order]);
+        order++;
+        if (order >= SPI_PAGESIZE) {
+          order = 0;
+          index += SPI_PAGESIZE;
+        }
+      }
+      if (millis() >= times[1]) {
+        digitalWrite(TIMER_LED, !digitalRead(TIMER_LED));
+        times[1] += 100;
+      }
+      if (digitalRead(KEY1) == 0 || index >= end_index) {
+        if (key != 1) {
+          button_time_start = millis();
+          button_time_end = millis();
+          key = 1;
+        } else {
+          button_time_end = millis();
+        }
+        if ((button_time_end - button_time_start) >= 10 || index >= end_index) {
+          key = 0;
+          state = 0, order = 0, value = 0, index = 0;
+          end_index = 0;
+          digitalWrite(TIMER_LED, 1);
+          digitalWrite(RELAY_LED, 0);
+          digitalWrite(MOS, 0);
+          while (digitalRead(KEY1) == 0)
+            ;
+        }
+      } else {
+        key = 0;
+      }
+    } break;
   }
 }
