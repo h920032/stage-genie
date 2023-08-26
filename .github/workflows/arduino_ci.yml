@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arduino-platform: ["espressif:esp32"]
-        fqbn: ["espressif:esp32:esp32c3:PartitionScheme=huge_app,FlashMode=dio"]
+        arduino-platform: ["esp32:esp32c3"]
+        fqbn: ["esp32:esp32c3:PartitionScheme=huge_app,FlashMode=dio"]
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -20,7 +20,7 @@ jobs:
       - name: Install Platform
         run: |
           arduino-cli core update-index
-          arduino-cli  core update-index --additional-urls https://dl.espressif.com/dl/package_esp32_index.json
+          arduino-cli core update-index --additional-urls https://dl.espressif.com/dl/package_esp32_index.json
           arduino-cli core install ${{matrix.arduino-platform}}
           arduino-cli lib install SPIMemory
 
