@@ -1,10 +1,10 @@
 #include <SPIMemory.h>
 
 // Define component pin assignments
-#define RECODRD_LED 26 //IO18
-#define TIMER_LED 20 //IO6
-#define NORMAL_LED 21 //IO7
-#define RELAY_LED 27 //IO19
+#define RECODRD_LED 26  // IO18
+#define TIMER_LED 20    // IO6
+#define NORMAL_LED 21   // IO7
+#define RELAY_LED 27    // IO19
 
 #define RECODRD_LED_CHANNEL 0
 #define TIMER_LED_CHANNEL 1
@@ -12,12 +12,12 @@
 #define RELAY_LED_CHANNEL 3
 #define MOS_CHANNEL 4
 
-#define KEY1 13 //IO1
-#define KEY2 5 //IO2
-#define KEY3 6 //IO3
-#define METER 18 //IO4
-#define POWER 19 //IO5
-#define MOS 16 //IO10  // Relay control pin
+#define KEY1 13   // IO1
+#define KEY2 5    // IO2
+#define KEY3 6    // IO3
+#define METER 18  // IO4
+#define POWER 19  // IO5
+#define MOS 16    // IO10  // Relay control pin
 #define INDEX_NUM_ADDR 65536
 #define MAX_RECORD 64000
 #define SPI_PAGESIZE 256
@@ -94,8 +94,8 @@ void setup() {
   int fadeDelay = 2000 / 256;
   // Serial.println(analogRead(POWER));
   if (analogRead(POWER) < 500) {
-    for (int i = 0; i < 3;
-         i++) {  // Repeat the fade up and fade down three times
+    for (int i = 0; i < 3; i++) {
+      // Repeat the fade up and fade down three times
       for (int brightness = 0; brightness <= 255; brightness++) {  // Fade up
         ledcWrite(0, brightness);
         delay(fadeDelay);
@@ -192,7 +192,8 @@ void loop() {
         while (digitalRead(KEY3) == 0) {
           // analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
           // analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
-          ledcWrite(RECODRD_LED_CHANNEL, map(analogRead(METER), 0, 1023, 0, 255));
+          ledcWrite(RECODRD_LED_CHANNEL,
+                    map(analogRead(METER), 0, 1023, 0, 255));
           ledcWrite(MOS_CHANNEL, map(analogRead(METER), 0, 1023, 0, 255));
         }
       } else {
