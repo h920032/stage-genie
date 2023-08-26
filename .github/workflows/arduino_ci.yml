@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arduino-platform: ["esp32:esp32c3"]
-        fqbn: ["esp32:esp32c3:PartitionScheme=huge_app,FlashMode=dio"]
+        arduino-platform: ["esp32:esp32"]
+        fqbn: ["esp32:esp32:esp32c3:PartitionScheme=huge_app,FlashMode=dio"]
     steps:
       - name: Checkout
         uses: actions/checkout@master
