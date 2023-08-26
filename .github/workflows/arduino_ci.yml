@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arduino-platform: ["arduino:avr"]
-        fqbn: ["arduino:avr:pro:cpu=8MHzatmega328"]
+        arduino-platform: ["espressif:esp32"]
+        fqbn: ["espressif:esp32:esp32c3:PartitionScheme=huge_app,FlashMode=dio"]
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -22,14 +22,13 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install ${{matrix.arduino-platform}}
           arduino-cli lib install SPIMemory
-          arduino-cli lib install SoftPWM
 
       - name: Compile Sketch
-        run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino --output-dir ./stage-genie_promini8mhz
+        run: arduino-cli compile --fqbn ${{matrix.fqbn}} ./stage-genie.ino --output-dir ./stage-genie_esp32c3
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: stage-genie_promini8mhz
-          path: ./stage-genie_promini8mhz
+          name: stage-genie_esp32c3
+          path: ./stage-genie_esp32c3
           retention-days: 30
