@@ -37,8 +37,6 @@ void setup() {
   // Initialize serial communication, configure pins and set initial LED states
   Serial.begin(9600);
 
-  pinMode(MOS, OUTPUT);
-  digitalWrite(MOS, 0);
   pinMode(RECODRD_LED, OUTPUT);
   pinMode(TIMER_LED, OUTPUT);
   pinMode(NORMAL_LED, OUTPUT);
@@ -109,6 +107,10 @@ void setup() {
   digitalWrite(TIMER_LED, 0);
   digitalWrite(NORMAL_LED, 1);
   digitalWrite(RELAY_LED, 0);
+  pinMode(MOS, OUTPUT);
+  // analogWrite(MOS, 0);
+  SoftPWMSet(MOS, 0);
+  SoftPWMSetFadeTime(RECODRD_LED, 0, 0);
 }
 
 void loop() {
@@ -123,7 +125,8 @@ void loop() {
       // KEY1 for 5 seconds: Clear flash memory and transition to state 1
       // KEY2: Transition to state 2
       // KEY3: Manual relay control
-      digitalWrite(MOS, 0);
+      SoftPWMSet(MOS, 0);
+      // digitalWrite(MOS, 0);
       digitalWrite(RECODRD_LED, 0);
       digitalWrite(TIMER_LED, 0);
       digitalWrite(NORMAL_LED, 1);
@@ -184,8 +187,10 @@ void loop() {
         }
       } else if (digitalRead(KEY3) == 0) {
         while (digitalRead(KEY3) == 0) {
-          analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
           analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
+          // analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
+          SoftPWMSet(MOS, map(analogRead(METER), 0, 1023, 0, 255));
+          // SoftPWMSetPercent(MOS, map((int)map(analogRead(METER), 0, 1023, 0, 255), 0, 255, 0, 100));
         }
       } else {
         key = 0;
@@ -203,11 +208,13 @@ void loop() {
         if (digitalRead(KEY3) == 0) {
           pageBuffer[order] =
               map(analogRead(METER), 0, 1023, 0, 255);  // analogRead(A1) >> 2;
-          analogWrite(MOS, (int)pageBuffer[order]);
+          // analogWrite(MOS, (int)pageBuffer[order]);
+          SoftPWMSet(MOS, (int)pageBuffer[order]);
           analogWrite(RELAY_LED, (int)pageBuffer[order]);
         } else {
           pageBuffer[order] = 0;
-          analogWrite(MOS, 0);
+          // analogWrite(MOS, 0);
+          SoftPWMSet(MOS, 0);
           analogWrite(RELAY_LED, 0);
         }
         order++;
@@ -233,6 +240,8 @@ void loop() {
           key = 0;
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
+          // digitalWrite(MOS, 0);
+          SoftPWMSet(MOS, 0);
           if (index < MAX_INDEX) {
             for (int i = order; i < SPI_PAGESIZE; i++) {
               pageBuffer[i] = 0;
@@ -263,7 +272,8 @@ void loop() {
           flash.readByteArray(index, &data_buffer[0], SPI_PAGESIZE);
         }
         analogWrite(RELAY_LED, (int)data_buffer[order]);
-        analogWrite(MOS, (int)data_buffer[order]);
+        // analogWrite(MOS, (int)data_buffer[order]);
+        SoftPWMSet(MOS, (int)data_buffer[order]);
         order++;
         if (order >= SPI_PAGESIZE) {
           order = 0;
@@ -288,7 +298,8 @@ void loop() {
           end_index = 0;
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
-          digitalWrite(MOS, 0);
+          // digitalWrite(MOS, 0);
+          SoftPWMSet(MOS, 0);
           while (digitalRead(KEY1) == 0)
             ;
         }
