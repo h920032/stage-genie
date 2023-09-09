@@ -1,30 +1,32 @@
-#include <SPIMemory.h>
+#include <Arduino.h>
 
 // Define component pin assignments
-#define RECODRD_LED 26  // IO18
-#define TIMER_LED 20    // IO6
-#define NORMAL_LED 21   // IO7
-#define RELAY_LED 27    // IO19
+#define RECODRD_LED 8  // IO18
+#define TIMER_LED 6    // IO6
+#define NORMAL_LED 7   // IO7
+#define RELAY_LED 9    // IO19
 
-#define RECODRD_LED_CHANNEL 0
-#define TIMER_LED_CHANNEL 1
-#define NORMAL_LED_CHANNEL 2
-#define RELAY_LED_CHANNEL 3
-#define MOS_CHANNEL 4
+// #define RECODRD_LED_CHANNEL 0
+// #define TIMER_LED_CHANNEL 1
+// #define NORMAL_LED_CHANNEL 2
+// #define RELAY_LED_CHANNEL 3
+// #define MOS_CHANNEL 4
 
-#define KEY1 13   // IO1
-#define KEY2 5    // IO2
-#define KEY3 6    // IO3
-#define METER 18  // IO4
-#define POWER 19  // IO5
-#define MOS 16    // IO10  // Relay control pin
+#define KEY1 1   // IO1
+#define KEY2 2    // IO2
+#define KEY3 3    // IO3
+#define METER 4  // IO4
+#define POWER 5  // IO5
+#define MOS 10    // IO10  // Relay control pin
 #define INDEX_NUM_ADDR 65536
 #define MAX_RECORD 64000
 #define SPI_PAGESIZE 256
+#define SPI_SECTORSIZE 4096
 
-SPIFlash flash;
-uint8_t pageBuffer[SPI_PAGESIZE];
-uint8_t data_buffer[SPI_PAGESIZE];
+const uint32_t NVM_Offset = 0x290000;
+
+uint8_t pageBuffer[SPI_SECTORSIZE];
+uint8_t data_buffer[SPI_SECTORSIZE];
 
 unsigned long times[2] = {0, 0};  // Store timing data for operations
 unsigned long button_time_start = 0;
@@ -36,7 +38,7 @@ uint16_t idx = 0;
 int order = 0;
 
 int state = 0;
-uint16_t record_size = 0;
+uint32_t record_size = 0;
 int key = 0;
 
 void setup() {
@@ -53,59 +55,58 @@ void setup() {
   pinMode(KEY2, INPUT_PULLUP);
   pinMode(KEY3, INPUT_PULLUP);
 
-  ledcSetup(RECODRD_LED_CHANNEL, 10000, 8);
-  ledcSetup(TIMER_LED_CHANNEL, 10000, 8);
-  ledcSetup(NORMAL_LED_CHANNEL, 10000, 8);
-  ledcSetup(RECODRD_LED_CHANNEL, 10000, 8);
-  ledcSetup(MOS_CHANNEL, 10000, 8);
-  ledcAttachPin(RECODRD_LED, 0);
-  ledcAttachPin(TIMER_LED, 1);
-  ledcAttachPin(NORMAL_LED, 2);
-  ledcAttachPin(RELAY_LED, 3);
-  ledcAttachPin(MOS, 4);
+  // ledcSetup(RECODRD_LED_CHANNEL, 10000, 8);
+  // ledcSetup(TIMER_LED_CHANNEL, 10000, 8);
+  // ledcSetup(NORMAL_LED_CHANNEL, 10000, 8);
+  // ledcSetup(RECODRD_LED_CHANNEL, 10000, 8);
+  // ledcSetup(MOS_CHANNEL, 10000, 8);
+  // ledcAttachPin(RECODRD_LED, 0);
+  // ledcAttachPin(TIMER_LED, 1);
+  // ledcAttachPin(NORMAL_LED, 2);
+  // ledcAttachPin(RELAY_LED, 3);
+  // ledcAttachPin(MOS, 4);
 
   for (int i = 0; i <= 255; i++) {
-    ledcWrite(RECODRD_LED_CHANNEL, i);
-    ledcWrite(TIMER_LED_CHANNEL, i);
-    ledcWrite(NORMAL_LED_CHANNEL, i);
-    ledcWrite(RELAY_LED_CHANNEL, i);
-    delay(20);
+    analogWrite(RECODRD_LED, i);
+    analogWrite(TIMER_LED, i);
+    analogWrite(NORMAL_LED, i);
+    analogWrite(RELAY_LED, i);
+    delay(2);
   }
 
   // Start SoftPWM and configure LED fade and brightness
-  flash.begin();
-  for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+  for (uint16_t i = 0; i < SPI_SECTORSIZE; ++i) {
     pageBuffer[i] = 0;
   }
-  for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+  for (uint16_t i = 0; i < SPI_SECTORSIZE; ++i) {
     data_buffer[i] = 0;
   }
-  delay(500);
+  // delay(500);
 
   // Reset LEDs to off
   for (int i = 255; i >= 0; i--) {
-    ledcWrite(RECODRD_LED_CHANNEL, i);
-    ledcWrite(TIMER_LED_CHANNEL, i);
-    ledcWrite(NORMAL_LED_CHANNEL, i);
-    ledcWrite(RELAY_LED_CHANNEL, i);
-    delay(20);
+    analogWrite(RECODRD_LED, i);
+    analogWrite(TIMER_LED, i);
+    analogWrite(NORMAL_LED, i);
+    analogWrite(RELAY_LED, i);
+    delay(2);
   }
 
-  int fadeDelay = 2000 / 256;
-  // Serial.println(analogRead(POWER));
-  if (analogRead(POWER) < 500) {
-    for (int i = 0; i < 3; i++) {
-      // Repeat the fade up and fade down three times
-      for (int brightness = 0; brightness <= 255; brightness++) {  // Fade up
-        ledcWrite(0, brightness);
-        delay(fadeDelay);
-      }
-      for (int brightness = 255; brightness >= 0; brightness--) {  // Fade down
-        ledcWrite(0, brightness);
-        delay(fadeDelay);
-      }
-    }
-  }
+  // int fadeDelay = 2000 / 256;
+  // // Serial.println(analogRead(POWER));
+  // if (analogRead(POWER) < 500) {
+  //   for (int i = 0; i < 3; i++) {
+  //     // Repeat the fade up and fade down three times
+  //     for (int brightness = 0; brightness <= 255; brightness++) {  // Fade up
+  //       analogWrite(0, brightness);
+  //       delay(fadeDelay);
+  //     }
+  //     for (int brightness = 255; brightness >= 0; brightness--) {  // Fade down
+  //       analogWrite(0, brightness);
+  //       delay(fadeDelay);
+  //     }
+  //   }
+  // }
 
   pinMode(RECODRD_LED, OUTPUT);
   pinMode(TIMER_LED, OUTPUT);
@@ -152,10 +153,12 @@ void loop() {
           digitalWrite(RELAY_LED, 0);
           key = 0;
 
-          flash.eraseChip();
+          for (uint32_t i = 0; i <= INDEX_NUM_ADDR; i +=  SPI_SECTORSIZE) {
+          ESP.flashEraseSector((NVM_Offset+i)/SPI_SECTORSIZE);
+          }
           // flash.writeWord(INDEX_NUM_ADDR, 0);
           state = 1, idx = 0, order = 0, value = 0, record_size = 0;
-          for (uint16_t i = 0; i < SPI_PAGESIZE; ++i) {
+          for (uint16_t i = 0; i < SPI_SECTORSIZE; ++i) {
             pageBuffer[i] = 0;
           }
 
@@ -183,7 +186,8 @@ void loop() {
           key = 0;
           if (state == 0) {
             state = 2, order = 0, idx = 0, value = 0;
-            record_size = flash.readWord(INDEX_NUM_ADDR);
+            // record_size = flash.readWord(INDEX_NUM_ADDR);
+            ESP.flashRead(NVM_Offset+INDEX_NUM_ADDR, (uint32_t*)&record_size, sizeof(record_size));
             times[0] = millis();
             times[1] = millis();
           }
@@ -192,9 +196,9 @@ void loop() {
         while (digitalRead(KEY3) == 0) {
           // analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
           // analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
-          ledcWrite(RECODRD_LED_CHANNEL,
+          analogWrite(RECODRD_LED,
                     map(analogRead(METER), 0, 1023, 0, 255));
-          ledcWrite(MOS_CHANNEL, map(analogRead(METER), 0, 1023, 0, 255));
+          analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
         }
       } else {
         key = 0;
@@ -214,20 +218,20 @@ void loop() {
               map(analogRead(METER), 0, 1023, 0, 255);  // analogRead(A1) >> 2;
           // analogWrite(MOS, (int)pageBuffer[order]);
           // analogWrite(RELAY_LED, (int)pageBuffer[order]);
-          ledcWrite(RELAY_LED_CHANNEL, (int)pageBuffer[order]);
-          ledcWrite(MOS_CHANNEL, (int)pageBuffer[order]);
+          analogWrite(RELAY_LED, (int)pageBuffer[order]);
+          analogWrite(MOS, (int)pageBuffer[order]);
         } else {
           pageBuffer[order] = 0;
           // analogWrite(MOS, 0);
           // analogWrite(RELAY_LED, 0);
-          ledcWrite(RELAY_LED_CHANNEL, 0);
-          ledcWrite(MOS_CHANNEL, 0);
+          analogWrite(RELAY_LED, 0);
+          analogWrite(MOS, 0);
         }
         order++;
-        if (order >= SPI_PAGESIZE) {
-          flash.writeByteArray(idx, &pageBuffer[0], SPI_PAGESIZE);
+        if (order >= SPI_SECTORSIZE) {
+          ESP.flashWrite(NVM_Offset+(uint32_t)idx, (uint32_t*)&pageBuffer[0], SPI_SECTORSIZE);
           order = 0;
-          idx += SPI_PAGESIZE;
+          idx += SPI_SECTORSIZE;
         }
       }
       if (millis() >= times[1]) {
@@ -247,13 +251,13 @@ void loop() {
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
           if (idx < MAX_RECORD) {
-            for (int i = order; i < SPI_PAGESIZE; i++) {
+            for (int i = order; i < SPI_SECTORSIZE; i++) {
               pageBuffer[i] = 0;
             }
-            flash.writeByteArray(idx, &pageBuffer[0], SPI_PAGESIZE);
-            idx += SPI_PAGESIZE;
+            ESP.flashWrite(NVM_Offset+(uint32_t)idx, (uint32_t*)&pageBuffer[0], SPI_SECTORSIZE);
+            idx += SPI_SECTORSIZE;
           }
-          flash.writeWord(INDEX_NUM_ADDR, idx);
+          ESP.flashWrite(NVM_Offset+INDEX_NUM_ADDR, (uint32_t*)&idx, sizeof(idx));
           state = 0, order = 0, value = 0, idx = 0;
           record_size = 0;
           while (digitalRead(KEY1) == 0)
@@ -273,16 +277,16 @@ void loop() {
       {
         times[0] += 10;
         if (order == 0) {
-          flash.readByteArray(idx, &data_buffer[0], SPI_PAGESIZE);
+          ESP.flashRead(NVM_Offset+idx, (uint32_t*)&data_buffer[0], SPI_SECTORSIZE);
         }
         // analogWrite(RELAY_LED, (int)data_buffer[order]);
         // analogWrite(MOS, (int)data_buffer[order]);
-        ledcWrite(RELAY_LED_CHANNEL, (int)pageBuffer[order]);
-        ledcWrite(MOS_CHANNEL, (int)pageBuffer[order]);
+        analogWrite(RELAY_LED, (int)pageBuffer[order]);
+        analogWrite(MOS, (int)pageBuffer[order]);
         order++;
-        if (order >= SPI_PAGESIZE) {
+        if (order >= SPI_SECTORSIZE) {
           order = 0;
-          idx += SPI_PAGESIZE;
+          idx += SPI_SECTORSIZE;
         }
       }
       if (millis() >= times[1]) {
