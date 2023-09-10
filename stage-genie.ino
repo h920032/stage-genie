@@ -2,11 +2,10 @@
 #include <SoftPWM.h>
 
 // Define component pin assignments
-#define RECODRD_LED 6
-#define TIMER_LED 8
-#define NORMAL_LED 7
-#define RELAY_LED 5
-#define POWER_LED 9
+#define RECODRD_LED 7
+#define TIMER_LED 9
+#define NORMAL_LED 8
+#define RELAY_LED 6
 #define KEY1 A1
 #define KEY2 A2
 #define KEY3 A3
@@ -85,19 +84,19 @@ void setup() {
 
   Serial.println(analogRead(POWER));
   if (analogRead(POWER) < 500) {
-    SoftPWMSet(POWER_LED, 0);
-    SoftPWMSetFadeTime(POWER_LED, 500, 500);
-    SoftPWMSetPercent(POWER_LED, 50);
+    SoftPWMSet(RECODRD_LED, 0);
+    SoftPWMSetFadeTime(RECODRD_LED, 500, 500);
+    SoftPWMSetPercent(RECODRD_LED, 50);
     delay(250);
-    SoftPWMSetPercent(POWER_LED, 0);
+    SoftPWMSetPercent(RECODRD_LED, 0);
     delay(250);
-    SoftPWMSetPercent(POWER_LED, 50);
+    SoftPWMSetPercent(RECODRD_LED, 50);
     delay(250);
-    SoftPWMSetPercent(POWER_LED, 0);
+    SoftPWMSetPercent(RECODRD_LED, 0);
     delay(250);
-    SoftPWMSetPercent(POWER_LED, 50);
+    SoftPWMSetPercent(RECODRD_LED, 50);
     delay(250);
-    SoftPWMSetPercent(POWER_LED, 0);
+    SoftPWMSetPercent(RECODRD_LED, 0);
     delay(250);
   }
 
