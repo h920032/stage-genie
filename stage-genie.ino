@@ -11,7 +11,9 @@
 #define KEY3 A3
 #define METER A4
 #define POWER A5
-#define MOS 3  // Relay control pin
+#define MOTOR 5  // Relay control pin
+#define SLEEPN 4
+#define DIR 3
 #define INDEX_NUM_ADDR 65536
 #define MAX_INDEX 64000
 #define SPI_PAGESIZE 256
@@ -37,8 +39,12 @@ void setup() {
   // Initialize serial communication, configure pins and set initial LED states
   Serial.begin(9600);
 
-  pinMode(MOS, OUTPUT);
-  digitalWrite(MOS, 0);
+  pinMode(MOTOR, OUTPUT);
+  pinMode(SLEEPN, OUTPUT);
+  pinMode(DIR, OUTPUT);
+  digitalWrite(MOTOR, 0);
+  digitalWrite(DIR,0);
+  digitalWrite(SLEEPN,1);
   pinMode(RECODRD_LED, OUTPUT);
   pinMode(TIMER_LED, OUTPUT);
   pinMode(NORMAL_LED, OUTPUT);
@@ -122,7 +128,7 @@ void loop() {
       // KEY1 for 5 seconds: Clear flash memory and transition to state 1
       // KEY2: Transition to state 2
       // KEY3: Manual relay control
-      digitalWrite(MOS, 0);
+      digitalWrite(MOTOR, 0);
       digitalWrite(RECODRD_LED, 0);
       digitalWrite(TIMER_LED, 0);
       digitalWrite(NORMAL_LED, 1);
@@ -183,7 +189,7 @@ void loop() {
         }
       } else if (digitalRead(KEY3) == 0) {
         while (digitalRead(KEY3) == 0) {
-          analogWrite(MOS, map(analogRead(METER), 0, 1023, 0, 255));
+          analogWrite(MOTOR, map(analogRead(METER), 0, 1023, 0, 255));
           analogWrite(RELAY_LED, map(analogRead(METER), 0, 1023, 0, 255));
         }
       } else {
@@ -202,11 +208,11 @@ void loop() {
         if (digitalRead(KEY3) == 0) {
           pageBuffer[order] =
               map(analogRead(METER), 0, 1023, 0, 255);  // analogRead(A1) >> 2;
-          analogWrite(MOS, (int)pageBuffer[order]);
+          analogWrite(MOTOR, (int)pageBuffer[order]);
           analogWrite(RELAY_LED, (int)pageBuffer[order]);
         } else {
           pageBuffer[order] = 0;
-          analogWrite(MOS, 0);
+          analogWrite(MOTOR, 0);
           analogWrite(RELAY_LED, 0);
         }
         order++;
@@ -262,7 +268,7 @@ void loop() {
           flash.readByteArray(index, &data_buffer[0], SPI_PAGESIZE);
         }
         analogWrite(RELAY_LED, (int)data_buffer[order]);
-        analogWrite(MOS, (int)data_buffer[order]);
+        analogWrite(MOTOR, (int)data_buffer[order]);
         order++;
         if (order >= SPI_PAGESIZE) {
           order = 0;
@@ -287,7 +293,7 @@ void loop() {
           end_index = 0;
           digitalWrite(TIMER_LED, 1);
           digitalWrite(RELAY_LED, 0);
-          digitalWrite(MOS, 0);
+          digitalWrite(MOTOR, 0);
           while (digitalRead(KEY1) == 0)
             ;
         }
